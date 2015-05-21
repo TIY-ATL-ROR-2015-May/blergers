@@ -9,11 +9,35 @@ module Blergers
   class Post < ActiveRecord::Base
     has_many :post_tags
     has_many :tags, through: :post_tags
+
+    def self.page(n, page_size=10)
+      page_offset = (n - 1) * page_size
+      Post.order(date: :desc).offset(page_offset).limit(page_size)
+    end
+
+    def tweeter
+      self.content[0, 140]
+    end
   end
 
   class Tag < ActiveRecord::Base
     has_many :post_tags
     has_many :posts, through: :post_tags
+
+    def self.top_tags
+      # Tag.all.map { |x| [x.name, x.posts.count] }.sort_by { |x| x[1] }.reverse
+      # Blergers::Tag.joins(:post_tags).
+      #   group_by {|x| x.name }.
+      #   map {|k, v| [k, v.length]}.
+      #   sort_by {|x| x[1] }.
+      #   reverse
+      # Tag.joins(:post_tags).group("tags.name").count.sort_by { |x| x[1] }.reverse
+      Tag.joins(:post_tags).group(:name).order("count_all DESC").count
+      ## The above ActiveRecord command generates the following SQL:
+      # sqlite> SELECT tags.*, COUNT(*) as count_all FROM TAGS
+      #    ...>   INNER JOIN post_tags ON post_tags.tag_id = tags.id
+      #    ...>   GROUP BY tags.name ORDER BY count_all;
+    end
   end
 
   class PostTag < ActiveRecord::Base
