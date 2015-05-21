@@ -38,6 +38,12 @@ module Blergers
       #    ...>   INNER JOIN post_tags ON post_tags.tag_id = tags.id
       #    ...>   GROUP BY tags.name ORDER BY count_all;
     end
+
+    def self.count_tagged_with(*tag_names)
+      # OH NOES! Overcounting for posts with more than one of tag_names!
+      # Tag.joins(:post_tags).where(name: tag_names).count
+      Tag.joins(:post_tags).where(name: tag_names).group(:post_id).count.count
+    end
   end
 
   class PostTag < ActiveRecord::Base
